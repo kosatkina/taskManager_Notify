@@ -20,6 +20,6 @@ This is a simple desktop note-taking application built with *Python*, *Kivy*, an
 
 # Recreate venv
 
-python -m venv venv
-venv\Scripts\activate on Windows or source venv/bin/activate on macOS/Linux
-pip install -r requirements.txt
+- python -m venv venv
+- venv\Scripts\activate on Windows or source venv/bin/activate on macOS/Linux
+- pip install -r requirements.txt
