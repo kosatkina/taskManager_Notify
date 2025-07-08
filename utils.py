@@ -17,39 +17,6 @@ def get_connection():
         return None
 
 
-# Function to initialize the database
-def init_db():
-    
-    try:
-        # Create DB and cursor
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        # Create a NoteList and Note tables to store metadata
-        create_note_list_table_query = """CREATE TABLE IF NOT EXISTS note_list (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    title TEXT NOT NULL,
-                    date_created TEXT NOT NULL,
-                    date_updated TEXT)
-            """
-        create_note_table_query = """CREATE TABLE IF NOT EXISTS note (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    content TEXT,
-                    FOREIGN KEY (id) REFERENCES note_list(id) ON DELETE CASCADE)
-            """
-        cursor.execute(create_note_list_table_query) 
-        cursor.execute(create_note_table_query)
-
-        # Commit command
-        conn.commit()
-
-    except sqlite3.Error as e:
-        print(f"Error initializing the database: {e}")
-    finally:
-        if conn:
-            conn.close()
-
-
 # Function to generate note's title
 def get_title(content):
     if not content or content.strip() == "":

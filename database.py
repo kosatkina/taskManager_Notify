@@ -1,3 +1,4 @@
+import sqlite3
 from utils import get_connection
 from utils import get_title
 from datetime import datetime
@@ -15,7 +16,7 @@ def init_db():
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Create a NoteList and Note tables to store metadata
+        # Create a note_list and note tables to store metadata
         create_note_list_table_query = """CREATE TABLE IF NOT EXISTS note_list (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT NOT NULL,
@@ -52,12 +53,17 @@ def create_note(content, title=None):
     # ToDo -- Add validation
 
     try:
-        # Insert record into note_list
-        cursor.execute("INSERT INTO note_list (title, date_created) VALUES (?, ?)", (title, dt))
-        id = cursor.lastrowid
+        conn = get_connection
+        cursor = conn.cursor()
 
-        # Insert into note
-        cursor.execute("INSERT INTO note (id, content) VALUES (?, ?)", (id, content))
+        # Insert record into note_list and note tables
+        insert_note_query = "INSERT INTO note_list (title, date_created) VALUES (?, ?)"
+        insert_note_content_query = "INSERT INTO note (id, content) VALUES (?, ?)"
+        
+        cursor.execute(insert_note_query, (title, dt))
+        note_id = cursor.lastrowid
+
+        cursor.execute(insert_note_content_query, (note_id, content))
 
         conn.commit()
         print(f"Added new note '{title}'")
