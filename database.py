@@ -124,13 +124,14 @@ def update_note(id, new_content):
         return
 
     dt = datetime.now().strftime("%c")
+    new_title = get_title(new_content)
 
     # ToDo -- Add validation
 
     cursor.execute("UPDATE note SET content = ? WHERE id = ?", (new_content, id))
-    cursor.execute("UPDATE note_list SET date_updated = ? WHERE id = ?", (dt, id))
+    cursor.execute("UPDATE note_list SET title = ?, date_updated = ? WHERE id = ?", (new_title, dt, id))
 
-    conn.commit
+    conn.commit()
     print(f"Note {id} updated.")
 
 
