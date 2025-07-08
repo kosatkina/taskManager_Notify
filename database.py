@@ -36,14 +36,7 @@ def create_note(content, title=None):
 
     # Generate title
     if not title or title.strip() == "":
-        strippedTitle = content.strip()
-        if not strippedTitle:
-            title = "(Untitled Note)"
-        else:
-            if len(strippedTitle) > TITLE_LEN:
-                title = strippedTitle[:(TITLE_LEN - 3)] + "..."
-            else:
-                title = strippedTitle
+        title = get_title(content)
 
     # ToDo -- Add validation
 
@@ -56,6 +49,20 @@ def create_note(content, title=None):
 
     conn.commit()
     print(f"Added new note '{title}'")
+
+
+# Function to generate note's title
+def get_title(content):
+    if not content or content.strip() == "":
+        return "(Untitled Note)"
+    
+    strippedTitle = content.strip()
+
+    if len(strippedTitle) > TITLE_LEN:
+        return strippedTitle[:(TITLE_LEN - 3)] + "..."
+    else:
+        return strippedTitle
+    
 
 # Function to read records from database
 def read_notes():
@@ -71,6 +78,7 @@ def read_notes():
     else:
         for note in notes:
             print(f"{note[0]} - {note[1]} (Created: {note[2]})")
+
 
 # Function to search note by title
 def search_note(word_to_search):
@@ -88,13 +96,14 @@ def search_note(word_to_search):
         for note in notes:
             print(f"{note[0]} - {note[1]} (Created: {note[2]})")
 
+
 # Function to find note by id
 def find_note_by_id(id):
 
-    conn.execute("""SELECT * 
-                    FROM note_list L
-                    JOIN note N ON L.id = N.id
-                    WHERE L.id = ?
+    cursor.execute("""SELECT note_list.id, note_list.title, note_list.date_created, note_list.date_updated 
+                FROM note_list 
+                JOIN note ON note_list.id = note.id
+                WHERE note_list.id = ?
         """, (id,))
     
     result = cursor.fetchone()
@@ -105,19 +114,35 @@ def find_note_by_id(id):
     else:
         return None
 
+
 # Function to update existing note
-def update_note(content):
+def update_note(id, new_content):
 
-    conn.execute("""UPDATE
+    # Check if note exists
+    note_to_update = find_note_by_id(id)
+    if not note_to_update:
+        return
 
-    """)
+    dt = datetime.now().strftime("%c")
+
     # ToDo -- Add validation
 
-# Function to delete note
+    cursor.execute("UPDATE note SET content = ? WHERE id = ?", (new_content, id))
+    cursor.execute("UPDATE note_list SET date_updated = ? WHERE id = ?", (dt, id))
 
-cursor.execute("DELETE FROM note_list WHERE id = ?", (id,))
-conn.commit()
-print(f"Note {id} deleted.")
+    conn.commit
+    print(f"Note {id} updated.")
+
+
+# Function to delete note
+def delete_note_by_id(id):
+    
+    # ToDo -- Add verification
+
+    cursor.execute("DELETE FROM note_list WHERE id = ?", (id,))
+    
+    conn.commit()
+    print(f"Note {id} deleted.")
 
 # Function to close connection
 def close_connection():

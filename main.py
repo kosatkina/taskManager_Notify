@@ -8,4 +8,7 @@ database.read_notes()
 
 database.search_note('shop')
 
+print("By id:")
+database.find_note_by_id(7)
+
 database.close_connection()
