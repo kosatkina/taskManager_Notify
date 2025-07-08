@@ -1,6 +1,5 @@
 import sqlite3
-from utils import get_connection
-from utils import get_title
+from utils import get_connection, get_title
 from datetime import datetime
 
 # Constants
@@ -12,7 +11,7 @@ TITLE_LEN = 20
 def init_db():
     
     try:
-        # Create DB and cursor
+        # Connect to the DB and create cursor
         conn = get_connection()
         cursor = conn.cursor()
 
@@ -24,7 +23,7 @@ def init_db():
                     date_updated TEXT)
             """
         create_note_table_query = """CREATE TABLE IF NOT EXISTS note (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id INTEGER PRIMARY KEY,
                     content TEXT,
                     FOREIGN KEY (id) REFERENCES note_list(id) ON DELETE CASCADE)
             """
@@ -53,7 +52,7 @@ def create_note(content, title=None):
     # ToDo -- Add validation
 
     try:
-        conn = get_connection
+        conn = get_connection()
         cursor = conn.cursor()
 
         # Insert record into note_list and note tables
@@ -70,57 +69,97 @@ def create_note(content, title=None):
 
     except sqlite3.Error as e:
         print(f"Error creating note: {e}")
+    finally:
+        if conn:
+            conn.close()
 
 
 # Function to read records from database
 def read_notes():
 
-    cursor.execute("""SELECT id, title, date_created 
-                   FROM note_list 
-                   ORDER BY date_created DESC
-        """)
-    notes = cursor.fetchall()
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
 
-    if not notes:
-        print("No notes found...")
-    else:
-        for note in notes:
-            print(f"{note[0]} - {note[1]} (Created: {note[2]})")
+        select_query = """SELECT id, title, date_created 
+                    FROM note_list 
+                    ORDER BY date_created DESC
+            """
+
+        cursor.execute(select_query)
+        notes = cursor.fetchall()
+
+        # Display notes if any exist
+        if not notes:
+            print("No notes found...")
+        else:
+            for note in notes:
+                print(f"{note[0]} - {note[1]} (Created: {note[2]})")
+    
+    except sqlite3.Error as e:
+        print(f"Error reading notes: {e}")
+    finally:
+        if conn:
+            conn.close()
 
 
 # Function to search note by title
 def search_note(word_to_search):
 
-    search_pattern = f"%{word_to_search}%"
-    cursor.execute("SELECT * FROM note_list WHERE title LIKE ?", (search_pattern,))
-    notes = cursor.fetchall()
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        search_pattern = f"%{word_to_search}%"
+        select_by_pattern_query = "SELECT * FROM note_list WHERE title LIKE ?"
+        
+        cursor.execute(select_by_pattern_query, (search_pattern,))
+        notes = cursor.fetchall()
 
-    # ToDo -- Add validation
+        # ToDo -- Add validation
 
-    if not notes:
-        print("No notes found...")
-    else:
-        print("Search Results: ")
-        for note in notes:
-            print(f"{note[0]} - {note[1]} (Created: {note[2]})")
+        if not notes:
+            print("No notes found...")
+        else:
+            print("Search Results: ")
+            for note in notes:
+                print(f"{note[0]} - {note[1]} (Created: {note[2]})")
+
+    except sqlite3.Error as e:
+        print(f"Error searching notes: {e}")
+    finally:
+        if conn:
+            conn.close()
 
 
 # Function to find note by id
 def find_note_by_id(id):
 
-    cursor.execute("""SELECT note_list.id, note_list.title, note_list.date_created, note_list.date_updated 
-                FROM note_list 
-                JOIN note ON note_list.id = note.id
-                WHERE note_list.id = ?
-        """, (id,))
-    
-    result = cursor.fetchone()
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        
+        select_by_id_query = """SELECT note_list.id, note_list.title, note_list.date_created, note_list.date_updated 
+                    FROM note_list 
+                    JOIN note ON note_list.id = note.id
+                    WHERE note_list.id = ?
+            """
+        cursor.execute(select_by_id_query, (id,))
+        
+        result = cursor.fetchone()
 
-    if result:
-        print(f"{result[0]} - {result[1]} (Created: {result[2]}) (Updated: {result[3]})")
-        return result
-    else:
+        if result:
+            print(f"{result[0]} - {result[1]} (Created: {result[2]}) (Updated: {result[3]})")
+            return result
+        else:
+            return None
+        
+    except sqlite3.Error as e:
+        print(f"Error searching note by id: {e}")
         return None
+    finally:
+        if conn:
+            conn.close()
 
 
 # Function to update existing note
@@ -136,11 +175,24 @@ def update_note(id, new_content):
 
     # ToDo -- Add validation
 
-    cursor.execute("UPDATE note SET content = ? WHERE id = ?", (new_content, id))
-    cursor.execute("UPDATE note_list SET title = ?, date_updated = ? WHERE id = ?", (new_title, dt, id))
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
 
-    conn.commit()
-    print(f"Note {id} updated.")
+        update_note_query = "UPDATE note SET content = ? WHERE id = ?"
+        update_note_list_query = "UPDATE note_list SET title = ?, date_updated = ? WHERE id = ?"
+
+        cursor.execute(update_note_query, (new_content, id))
+        cursor.execute(update_note_list_query, (new_title, dt, id))
+
+        conn.commit()
+        print(f"Note {id} updated.")
+
+    except sqlite3.Error as e:
+        print(f"Error updating note: {e}")
+    finally:
+        if conn:
+            conn.close()
 
 
 # Function to delete note
@@ -148,11 +200,19 @@ def delete_note_by_id(id):
     
     # ToDo -- Add verification
 
-    cursor.execute("DELETE FROM note_list WHERE id = ?", (id,))
-    
-    conn.commit()
-    print(f"Note {id} deleted.")
+    try: 
+        conn = get_connection()
+        cursor = conn.cursor()
 
-# Function to close connection
-def close_connection():
-    conn.close()
+        delete_note_query = "DELETE FROM note_list WHERE id = ?"
+        cursor.execute(delete_note_query, (id,))
+        
+        conn.commit()
+        print(f"Note {id} deleted.")
+
+    except sqlite3.Error as e:
+        print(f"Error deleting note: {e}")
+    finally:
+        if conn:
+            conn.close()
+
