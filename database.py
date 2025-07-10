@@ -1,5 +1,5 @@
 import sqlite3
-from utils import get_connection, get_title, clean_content, clean_title, sanitize_input, escape_like
+from utils import get_connection, get_title, clean_content, sanitize_input, escape_like
 from datetime import datetime
 
 
@@ -42,13 +42,12 @@ def create_note(content, title=None):
 
     dt = datetime.now().strftime("%c")
 
+    # Input validation
+    content = clean_content(content)
+
     # Generate and clean title
     if not title or title.strip() == "":
         title = get_title(content)
-
-    # Input validation
-    title = clean_title(title)
-    content = clean_content(content)
 
     try:
         conn = get_connection()
@@ -192,8 +191,8 @@ def update_note(id, new_content):
         return
 
     dt = datetime.now().strftime("%c")
-    new_title = clean_title(get_title(new_content))
     new_content = clean_content(new_content)
+    new_title = get_title(new_content)
 
     try:
         conn = get_connection()

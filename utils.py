@@ -23,26 +23,21 @@ def get_connection():
 def get_title(content):
     
     first_line = content.strip().split("\n")[0]
-    title = clean_title(first_line)
     
-    strippedTitle = title.strip()
+    if not first_line:
+        return "Untitled note".ljust(TITLE_LEN)
+    
+    stripped = first_line.strip()
 
-    if len(strippedTitle) > TITLE_LEN:
-        return strippedTitle[:(TITLE_LEN - 3)] + "..."
+    if len(stripped) > TITLE_LEN:
+        return stripped[:(TITLE_LEN - 3)] + "..."
     else:
-        return strippedTitle
+        return stripped.ljust(TITLE_LEN)
     
 
 # Functions to validate user input
 def sanitize_input(text):
     return text.strip()
-
-def clean_title(title):
-    title = title.strip()
-    if not title:
-        title = "Untitled note"
-
-    return title.ljust(TITLE_LEN)[:TITLE_LEN]
 
 def clean_content(content):
     # Limit content length in 500 characters
