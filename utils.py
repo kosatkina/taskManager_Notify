@@ -1,11 +1,13 @@
 import sqlite3
+import re
 
 import sqlite3
 from datetime import datetime
 
 # Constants
-TITLE_LEN = 20
 DB_PATH = 'notify.db'
+TITLE_LEN = 20
+CONTENT_LEN = 500
 
 # Helper function to connect to the db
 def get_connection():
@@ -29,3 +31,22 @@ def get_title(content):
     else:
         return strippedTitle
     
+
+# Functions to validate user input
+def sanitize_input(text):
+    return text.strip()
+
+def clean_title():
+    title = title.strip()
+    if not title:
+        title = "Untitled note"
+
+    return title[:TITLE_LEN].ljust(TITLE_LEN)
+
+def clean_content(content):
+    # Limit content length in 500 characters
+    return content.strip()[:CONTENT_LEN]
+
+def escape_like(value):
+    # Escape wildcard characters in LIKE query
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")

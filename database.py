@@ -1,9 +1,6 @@
 import sqlite3
-from utils import get_connection, get_title
+from utils import get_connection, get_title, clean_content, clean_title, sanitize_input, escape_like
 from datetime import datetime
-
-# Constants
-TITLE_LEN = 20
 
 
 # CRUD operations
@@ -45,11 +42,13 @@ def create_note(content, title=None):
 
     dt = datetime.now().strftime("%c")
 
-    # Generate title
+    # Generate and clean title
     if not title or title.strip() == "":
         title = get_title(content)
 
-    # ToDo -- Add validation
+    # Input validation
+    title = clean_title(title)
+    content = clean_content(content)
 
     try:
         conn = get_connection()
@@ -65,7 +64,7 @@ def create_note(content, title=None):
         cursor.execute(insert_note_content_query, (note_id, content))
 
         conn.commit()
-        print(f"Added new note '{title}'")
+        print(f"Added new note '{title.strip()}'")
 
     except sqlite3.Error as e:
         print(f"Error creating note: {e}")
@@ -81,7 +80,7 @@ def read_notes():
         conn = get_connection()
         cursor = conn.cursor()
 
-        select_query = """SELECT id, title, date_created 
+        select_query = """SELECT * 
                     FROM note_list 
                     ORDER BY date_created DESC
             """
@@ -93,8 +92,11 @@ def read_notes():
         if not notes:
             print("No notes found...")
         else:
+            print("\nNote # | Title\t\t\t| Created at\t\t | Updated at")
+            print("--------------------------------------------------------------------------")
+            
             for note in notes:
-                print(f"{note[0]} - {note[1]} (Created: {note[2]})")
+                print(f"{note[0]}\t| {note[1]} | {note[2]} | {note[3]}")
     
     except sqlite3.Error as e:
         print(f"Error reading notes: {e}")
@@ -106,11 +108,15 @@ def read_notes():
 # Function to search note by title
 def search_note(word_to_search):
 
+    # Validate user input
+    word_to_search = sanitize_input(word_to_search)
+    word_to_search = escape_like(word_to_search)
+    search_pattern = f"%{word_to_search}%"
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
         
-        search_pattern = f"%{word_to_search}%"
         select_by_pattern_query = "SELECT * FROM note_list WHERE title LIKE ?"
         
         cursor.execute(select_by_pattern_query, (search_pattern,))
@@ -121,9 +127,12 @@ def search_note(word_to_search):
         if not notes:
             print("No notes found...")
         else:
-            print("Search Results: ")
+            print("\nSearch Results: ")
+            print("Note # | Title\t\t | Created at\t\t | Updated at")
+            print("--------------------------------------------------------------------------")
+            
             for note in notes:
-                print(f"{note[0]} - {note[1]} (Created: {note[2]})")
+                print(f"{note[0]} | {note[1]} | {note[2]} | {note[3]}")
 
     except sqlite3.Error as e:
         print(f"Error searching notes: {e}")
@@ -135,11 +144,16 @@ def search_note(word_to_search):
 # Function to find note by id
 def find_note_by_id(id):
 
+    # Validate user input
+    if not str(id).isdigit():
+        print("Invalid note #")
+        return None
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
         
-        select_by_id_query = """SELECT note_list.id, note_list.title, note_list.date_created, note_list.date_updated 
+        select_by_id_query = """SELECT note_list.id, note_list.title, note_list.date_created, note_list.date_updated, note.content 
                     FROM note_list 
                     JOIN note ON note_list.id = note.id
                     WHERE note_list.id = ?
@@ -149,7 +163,10 @@ def find_note_by_id(id):
         result = cursor.fetchone()
 
         if result:
-            print(f"{result[0]} - {result[1]} (Created: {result[2]}) (Updated: {result[3]})")
+            print("\nNote # | Title\t\t | Created at\t\t | Updated at")
+            print("--------------------------------------------------------------------------")
+            print(f"{result[0]} | {result[1]} | {result[2]} | {result[3]}")
+            print("\nContent:\n" + result[4])
             return result
         else:
             return None
@@ -165,15 +182,18 @@ def find_note_by_id(id):
 # Function to update existing note
 def update_note(id, new_content):
 
+    if not str(id).isdigit():
+        print("Invalid note #")
+        return None
+    
     # Check if note exists
     note_to_update = find_note_by_id(id)
     if not note_to_update:
         return
 
     dt = datetime.now().strftime("%c")
-    new_title = get_title(new_content)
-
-    # ToDo -- Add validation
+    new_title = clean_title(get_title(new_content))
+    new_content = clean_content(new_content)
 
     try:
         conn = get_connection()
@@ -197,9 +217,11 @@ def update_note(id, new_content):
 
 # Function to delete note
 def delete_note_by_id(id):
-    
-    # ToDo -- Add verification
 
+    if not str(id).isdigit():
+        print("Invalid note #")
+        return None
+    
     try: 
         conn = get_connection()
         cursor = conn.cursor()
