@@ -19,12 +19,13 @@ def get_connection():
         return None
 
 
-# Function to generate note's title
+# Function to generate title from note's content
 def get_title(content):
-    if not content or content.strip() == "":
-        return "(Untitled Note)"
     
-    strippedTitle = content.strip()
+    first_line = content.strip().split("\n")[0]
+    title = clean_title(first_line)
+    
+    strippedTitle = title.strip()
 
     if len(strippedTitle) > TITLE_LEN:
         return strippedTitle[:(TITLE_LEN - 3)] + "..."
@@ -36,12 +37,12 @@ def get_title(content):
 def sanitize_input(text):
     return text.strip()
 
-def clean_title():
+def clean_title(title):
     title = title.strip()
     if not title:
         title = "Untitled note"
 
-    return title[:TITLE_LEN].ljust(TITLE_LEN)
+    return title.ljust(TITLE_LEN)[:TITLE_LEN]
 
 def clean_content(content):
     # Limit content length in 500 characters
