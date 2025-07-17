@@ -1,5 +1,5 @@
 import sqlite3
-from utils import get_connection, get_title, clean_content, sanitize_input, escape_like
+from db.utils import get_connection, get_title, clean_content, sanitize_input, escape_like
 from datetime import datetime
 
 
@@ -65,6 +65,8 @@ def create_note(content, title=None):
         conn.commit()
         print(f"Added new note '{title.strip()}'")
 
+        return note_id
+
     except sqlite3.Error as e:
         print(f"Error creating note: {e}")
     finally:
@@ -87,15 +89,7 @@ def read_notes():
         cursor.execute(select_query)
         notes = cursor.fetchall()
 
-        # Display notes if any exist
-        if not notes:
-            print("No notes found...")
-        else:
-            print("\nNote # | Title\t\t\t| Created at\t\t | Updated at")
-            print("--------------------------------------------------------------------------")
-            
-            for note in notes:
-                print(f"{note[0]}\t| {note[1]} | {note[2]} | {note[3]}")
+        return notes
     
     except sqlite3.Error as e:
         print(f"Error reading notes: {e}")
@@ -207,6 +201,8 @@ def update_note(id, new_content):
         conn.commit()
         print(f"Note {id} updated.")
 
+        return True
+
     except sqlite3.Error as e:
         print(f"Error updating note: {e}")
     finally:
@@ -230,6 +226,8 @@ def delete_note_by_id(id):
         
         conn.commit()
         print(f"Note {id} deleted.")
+
+        return True
 
     except sqlite3.Error as e:
         print(f"Error deleting note: {e}")

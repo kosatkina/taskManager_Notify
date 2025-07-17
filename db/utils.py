@@ -1,8 +1,5 @@
 import sqlite3
-import re
 
-import sqlite3
-from datetime import datetime
 
 # Constants
 DB_PATH = 'notify.db'
