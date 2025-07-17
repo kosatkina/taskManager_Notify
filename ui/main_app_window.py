@@ -29,10 +29,12 @@ class MainAppWindow(QMainWindow):
 
         # TODO - Set icons
 
-        # Central widget
+        # Set the text edit box as a central widget 
+        # Display the content if there is some and keep track of the changes
         self.text_edit = QTextEdit()
+        self.text_edit.setPlainText(content)
         self.text_edit.textChanged.connect(self.update_status)
-        
+        self.text_edit.textChanged.connect(self.track_changes)
         self.setCentralWidget(self.text_edit)
         
         # Menu and status bar
@@ -62,6 +64,13 @@ class MainAppWindow(QMainWindow):
         note_menu.addAction(list_action)
         note_menu.addAction(delete_action)
 
+    # Function to keep track of content changes
+    def track_changes(self):
+        current_content = self.text_edit.toPlainText()
+         
+        if current_content != self.original_content:
+            self.is_modified = True
+
     # Callback function on Add note button click signal
     # This function opens new main window above existing one
     def add_note(self):
@@ -81,11 +90,11 @@ class MainAppWindow(QMainWindow):
              QMessageBox.information(self, "No notes", "There are no notes saved.")
              return
         
-        note_titles = [f"Note {note[0]}" for note in notes]
+        note_titles = [f"{note[1]}" for note in notes]
         selected, ok = QInputDialog.getItem(self, "List Notes", "Select a note to view:", note_titles, 0, False)
         if ok:
             index = note_titles.index(selected)
-            note_id, content = notes[index]
+            note_id, content = notes[index][0]
             note_window = MainAppWindow(note_id=note_id, content=content)
             note_window.show()
 
@@ -94,8 +103,13 @@ class MainAppWindow(QMainWindow):
          confirm = QMessageBox.question(self, "Delete", "Are you sure you want to delete this note?")
          
          if confirm == QMessageBox.StandardButton.Yes:
-              MainAppWindow.open_windows.remove(self)
-              self.close()
+            # Delete the note from the db and close the instance
+            if self.note_id:
+                delete_note_by_id(self.note_id)
+            if self in MainAppWindow.open_windows:
+                 MainAppWindow.open_windows.remove(self)
+            
+            self.close()
     
 
     # Function to create status bar
