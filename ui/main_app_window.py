@@ -94,7 +94,9 @@ class MainAppWindow(QMainWindow):
         selected, ok = QInputDialog.getItem(self, "List Notes", "Select a note to view:", note_titles, 0, False)
         if ok:
             index = note_titles.index(selected)
-            note_id, content = notes[index][0]
+            note = notes[index]
+            note_id = note[0]
+            content = note[1]
             note_window = MainAppWindow(note_id=note_id, content=content)
             note_window.show()
 
@@ -111,6 +113,29 @@ class MainAppWindow(QMainWindow):
             
             self.close()
     
+    # Callback function on close signal
+    def closeEvent(self, event):
+        content = self.text_edit.toPlainText()
+
+        if content.strip() and self.is_modified:
+            reply = QMessageBox.question(self, "Save note", "Do you want to save this note?",
+                                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel)
+            
+            if reply == QMessageBox.StandardButton.Cancel:
+                event.ignore()
+                return
+            elif reply == QMessageBox.StandardButton.Yes:
+                # Create a new note or update existing one
+                if self.note_id:
+                    update_note(self.note_id, content)
+                else:
+                    self.note_id = create_note(content)
+
+        if self in MainAppWindow.open_windows:
+            MainAppWindow.open_windows.remove(self)
+
+        event.accept()
+
 
     # Function to create status bar
     def create_status(self):

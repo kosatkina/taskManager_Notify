@@ -81,9 +81,10 @@ def read_notes():
         conn = get_connection()
         cursor = conn.cursor()
 
-        select_query = """SELECT * 
+        select_query = """SELECT note_list.id, note_list.title, note_list.date_created, note_list.date_updated, note.content 
                     FROM note_list 
-                    ORDER BY date_created DESC
+                    JOIN note ON note_list.id = note.id
+                    ORDER BY note_list.date_created DESC
             """
 
         cursor.execute(select_query)
@@ -93,6 +94,8 @@ def read_notes():
     
     except sqlite3.Error as e:
         print(f"Error reading notes: {e}")
+        return []
+
     finally:
         if conn:
             conn.close()
@@ -110,25 +113,22 @@ def search_note(word_to_search):
         conn = get_connection()
         cursor = conn.cursor()
         
-        select_by_pattern_query = "SELECT * FROM note_list WHERE title LIKE ?"
+        select_by_pattern_query = """SELECT note_list.id, note_list.title, note_list.date_created, note_list.date_updated, note.content 
+                                    FROM note_list 
+                                    JOIN note ON note_list.id = note.id
+                                    WHERE note_list.title LIKE ?
+                                    ORDER BY note_list.date_created DESC"""
         
         cursor.execute(select_by_pattern_query, (search_pattern,))
         notes = cursor.fetchall()
 
         # ToDo -- Add validation
 
-        if not notes:
-            print("No notes found...")
-        else:
-            print("\nSearch Results: ")
-            print("Note # | Title\t\t | Created at\t\t | Updated at")
-            print("--------------------------------------------------------------------------")
-            
-            for note in notes:
-                print(f"{note[0]} | {note[1]} | {note[2]} | {note[3]}")
+        return notes
 
     except sqlite3.Error as e:
         print(f"Error searching notes: {e}")
+        return []
     finally:
         if conn:
             conn.close()
@@ -155,14 +155,7 @@ def find_note_by_id(id):
         
         result = cursor.fetchone()
 
-        if result:
-            print("\nNote # | Title\t\t | Created at\t\t | Updated at")
-            print("--------------------------------------------------------------------------")
-            print(f"{result[0]} | {result[1]} | {result[2]} | {result[3]}")
-            print("\nContent:\n" + result[4])
-            return result
-        else:
-            return None
+        return result
         
     except sqlite3.Error as e:
         print(f"Error searching note by id: {e}")
