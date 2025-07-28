@@ -1,6 +1,7 @@
 import sqlite3
 from db.utils import get_connection, get_title, clean_content, sanitize_input, escape_like
 from datetime import datetime
+from logger import logger
 
 
 # CRUD operations
@@ -29,9 +30,10 @@ def init_db():
 
         # Commit command
         conn.commit()
+        logger.info("Database initialized successfully.")
 
     except sqlite3.Error as e:
-        print(f"Error initializing the database: {e}")
+        logger.exception("Error initializing the database.")
     finally:
         if conn:
             conn.close()
@@ -63,12 +65,12 @@ def create_note(content, title=None):
         cursor.execute(insert_note_content_query, (note_id, content))
 
         conn.commit()
-        print(f"Added new note '{title.strip()}'")
+        logger.info(f"Added new note '{title.strip()}' (ID: {note_id})")
 
         return note_id
 
     except sqlite3.Error as e:
-        print(f"Error creating note: {e}")
+        logger.exception("Error creating note.")
     finally:
         if conn:
             conn.close()
@@ -89,11 +91,12 @@ def read_notes():
 
         cursor.execute(select_query)
         notes = cursor.fetchall()
-
+        
+        logger.info(f"Fetched {len(notes)} notes from the database.")
         return notes
     
     except sqlite3.Error as e:
-        print(f"Error reading notes: {e}")
+        logger.exception("Error reading notes.")
         return []
 
     finally:
@@ -122,12 +125,11 @@ def search_note(word_to_search):
         cursor.execute(select_by_pattern_query, (search_pattern,))
         notes = cursor.fetchall()
 
-        # ToDo -- Add validation
-
+        logger.info(f"Search for '{word_to_search}' returned {len(notes)} result(s).")
         return notes
 
     except sqlite3.Error as e:
-        print(f"Error searching notes: {e}")
+        logger.exception("Error searching notes.")
         return []
     finally:
         if conn:
@@ -158,7 +160,7 @@ def find_note_by_id(id):
         return result
         
     except sqlite3.Error as e:
-        print(f"Error searching note by id: {e}")
+        logger.exception(f"Error finding note ID {id}.")
         return None
     finally:
         if conn:
@@ -192,12 +194,12 @@ def update_note(id, new_content):
         cursor.execute(update_note_list_query, (new_title, dt, id))
 
         conn.commit()
-        print(f"Note {id} updated.")
+        logger.info(f"Note {id} updated to new title: {new_title}")
 
         return True
 
     except sqlite3.Error as e:
-        print(f"Error updating note: {e}")
+        logger.exception(f"Error updating note ID {id}.")
     finally:
         if conn:
             conn.close()
@@ -218,12 +220,12 @@ def delete_note_by_id(id):
         cursor.execute(delete_note_query, (id,))
         
         conn.commit()
-        print(f"Note {id} deleted.")
+        logger.info(f"Note ID {id} deleted successfully.")
 
         return True
 
     except sqlite3.Error as e:
-        print(f"Error deleting note: {e}")
+        logger.exception(f"Error deleting note ID {id}.")
     finally:
         if conn:
             conn.close()
