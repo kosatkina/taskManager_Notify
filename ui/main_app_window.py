@@ -24,8 +24,8 @@ class MainAppWindow(QMainWindow):
         self.is_modified = False
 
         self.setWindowTitle("Notify")
-        #self.setGeometry(1150, 100, 250, 250) 
-        self.setFixedSize(300, 300)
+        self.setGeometry(1150, 100, 250, 250) 
+        self.setFixedSize(250, 250)
 
         # TODO - Set icons
 
@@ -96,7 +96,7 @@ class MainAppWindow(QMainWindow):
             index = note_titles.index(selected)
             note = notes[index]
             note_id = note[0]
-            content = note[1]
+            content = note[4]
             note_window = MainAppWindow(note_id=note_id, content=content)
             note_window.show()
 
